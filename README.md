@@ -1,100 +1,103 @@
-# Pipeline Runner
+# Pipeline
 
-A small workflow automation system. You define a **pipeline** as a set of tasks with dependencies (a directed acyclic graph), queue it for execution, and watch each task run live in the browser.
+A small workflow runner I built with Django. You create a pipeline out of tasks, say which tasks depend on which, hit Run, and watch them execute live. Tasks that don't depend on each other run in parallel, and if something fails, everything after it gets skipped instead of running on bad input.
 
-**Stack:** Django + SQLite on the backend. The frontend is plain HTML and JavaScript styled entirely with Bootstrap 5 (bundled locally in `static/vendor/`, so it works offline), with no build step.
+**Live demo:** http://pipeline.rohankumarrawat.com
 
-## How to run
+Backend is Django + SQLite. Frontend is plain HTML/JS with Bootstrap 5 (the CSS file is kept in `static/vendor/` so it works offline). No build step, no Node.
 
-You need Python 3.10 or newer.
+## Running it locally
+
+You'll need Python 3.10+.
 
 ```bash
 ./run.sh
 ```
 
-Then open http://127.0.0.1:8000.
+Then go to http://127.0.0.1:8000
 
-`run.sh` creates a virtualenv, installs Django, runs the migrations, cleans up any runs that were interrupted, and starts the server.
+The script sets up a virtualenv, installs Django, runs migrations and starts the server. That's it.
 
-Run the tests:
+To run the tests:
 
 ```bash
 source .venv/bin/activate
 python manage.py test
 ```
 
-## How to use it
+## Using it
 
-1. Under **New pipeline**, add your tasks, then click **Create pipeline**.
-   - To see failure handling, set one task's fail chance to 100%: every task after it is skipped, while separate branches still succeed.
-   - Each task has a name, a duration in seconds, a fail chance in percent, and the tasks it depends on (comma-separated names).
-2. Click **Run** next to a pipeline. You'll be taken to the run page. Use **Delete** to remove a pipeline and all its runs (blocked while a run is in progress).
-3. The run page updates by itself. It shows an overall progress bar, and for every task the status, start time, duration, a timeline bar, and the error if the task failed.
+1. Fill in a pipeline name and add some tasks. Each task has a name, a duration (seconds), a fail chance (%), and a comma-separated list of tasks it depends on.
+2. Click **Create pipeline**, then **Run** on it in the list.
+3. You'll land on the run page, which updates on its own. You can see each task's status, when it started, how long it took, and the error if it failed.
+
+Want to see a failure? Set one task's fail chance to 100. Anything that depends on it gets skipped, but other branches still finish.
+
+You can delete a pipeline from the list too (not while it's running though).
 
 ## How it works
 
 ```
-Browser (HTML/JS, polls JSON API)
-        │
-Django views ── SQLite (pipelines, tasks, runs, task_runs)
-        │
-In-process runner: run queue → run workers → task thread pool
+Browser (polls the JSON API)
+        |
+Django views --- SQLite
+        |
+Background runner: run queue -> run workers -> task thread pool
 ```
 
-- **Models:** `Pipeline` and `Task` are the definition. `Run` and `TaskRun` record one execution and the state of each task inside it.
-- **Validation** (`pipelines/validation.py`): rejects empty pipelines, duplicate task names, unknown or self dependencies, and cycles. Cycles are found with Kahn's algorithm.
-- **Runner** (`pipelines/runner.py`):
-  - When you trigger a run, it is put on a queue.
-  - A run worker starts every task whose dependencies have all succeeded and hands it to a thread pool. Every time a task finishes, it checks what is ready next.
-  - Independent tasks run at the same time. Up to 4 tasks run at once, and up to 2 runs are processed at once (configurable in `settings.py`).
-- **Tasks are simulated:** each task sleeps for its duration, then fails at random according to its fail chance. Swap out `do_task_work()` to make tasks do real work.
+- `models.py` has four models. `Pipeline` and `Task` are the definition, `Run` and `TaskRun` store one execution and the state of each task in it.
+- `validation.py` checks the pipeline before saving it: no empty pipelines, no duplicate names, no unknown deps, no cycles. Cycle check is Kahn's algorithm.
+- `runner.py` does the actual scheduling. When a run starts, every task with no pending dependencies gets sent to a thread pool. Each time one finishes, it checks what's ready next. Up to 4 tasks run at a time and 2 runs at a time (you can change both in `settings.py`).
+- Tasks are fake for now: they sleep for their duration and then fail randomly based on the fail chance. Replace `do_task_work()` if you want them to do real work.
 
-### Failure handling
+### When things go wrong
 
-- When a task fails, its error is saved and every task downstream of it is marked **skipped**, with the reason. Branches that don't depend on the failed task keep running. The run ends as **failed**.
-- Only the run's coordinator thread writes task state. The pool threads only do the work and return a result, so two threads never race on the same row.
-- If the runner itself hits an unexpected error, every unfinished task is marked failed or skipped and the run is marked failed. Nothing is left stuck in `running`.
-- If the server stops while runs are in progress, the next `./run.sh` marks those runs as failed with an "Interrupted" message. They are never left stuck as running.
+- A failed task saves its error, and every task downstream is marked skipped with the reason. The run ends as failed.
+- Only one thread (the run's coordinator) writes task state to the DB. Worker threads just do the work and hand back a result, so there are no race conditions on the same row.
+- If the runner itself crashes mid-run, all unfinished tasks get marked failed/skipped so nothing is stuck on "running".
+- If the server is stopped during a run, the next `./run.sh` marks that run as interrupted.
 
 ### Live updates
 
-The pipeline list polls every 2 seconds. The run page polls every second and stops once the run has finished.
+The pipeline list refreshes every 2 seconds, and the run page every second until the run finishes.
 
-## Tradeoffs
-
-| Decision | Why | What I'd do with more time |
-|---|---|---|
-| **Polling** instead of WebSockets or SSE | Simple, works with plain Django and `runserver`, and one-second latency is fine here | Server-Sent Events or Django Channels for push updates |
-| **In-process thread runner** instead of Celery/Redis | Keeps it to one process and one command, with no extra services | Celery or RQ with a real broker, so runs survive restarts and can scale to many workers |
-| **In-memory queue** | Simple | Store the queue in the DB so queued runs resume after a restart (right now they're marked failed) |
-| **SQLite** | Zero setup | Postgres for heavy concurrent writes |
-| **Simulated tasks** | Easy to demo ordering, parallelism and failures | Real task types (shell command, HTTP call) with timeouts, retries and log capture |
-| **No auth**; CSRF disabled on the JSON API | Out of scope for a local tool | Add user accounts so "my pipelines" means only your pipelines, and turn CSRF back on |
-| **No editing** of pipelines | Keeps the UI small | Versioned pipelines (editing would create a new version so old runs stay accurate) |
-| **No cancel or retry** buttons | Scope | Cancel a run, retry failed tasks only |
-| **Dependencies typed as comma-separated names** | Simple form | Pick dependencies from a dropdown and show a visual DAG |
-
-## Project layout
+## Project structure
 
 ```
-config/            Django settings and URLs
+config/            settings and urls
 pipelines/
-  models.py        Pipeline, Task, Run, TaskRun
-  validation.py    DAG validation (cycle detection)
-  runner.py        Background scheduler / executor
-  views.py         Pages + JSON API
-  tests.py         Tests
+  models.py
+  validation.py    cycle detection etc.
+  runner.py        background scheduler
+  views.py         pages + JSON API
+  tests.py
 templates/         index.html, run.html
-static/            common.js, index.js, run.js, vendor/bootstrap.min.css
-run.sh             One-command start
+static/            JS files + bootstrap
+run.sh             starts everything
 ```
 
 ## API
 
-| Method | URL | Description |
+| Method | URL | What it does |
 |---|---|---|
-| GET | `/api/pipelines/` | List pipelines with latest/recent run status |
-| POST | `/api/pipelines/` | Create: `{"name": "...", "tasks": [{"name": "a", "duration": 1, "fail_rate": 0.1, "depends_on": []}]}` |
-| POST | `/api/pipelines/<id>/run/` | Queue a new run |
-| DELETE | `/api/pipelines/<id>/` | Delete a pipeline and its runs (409 if a run is in progress) |
-| GET | `/api/runs/<id>/` | Run details with every task's state |
+| GET | `/api/pipelines/` | List pipelines with their latest runs |
+| POST | `/api/pipelines/` | Create a pipeline |
+| DELETE | `/api/pipelines/<id>/` | Delete a pipeline and its runs |
+| POST | `/api/pipelines/<id>/run/` | Start a new run |
+| GET | `/api/runs/<id>/` | Get a run with every task's status |
+
+Example body for creating a pipeline:
+
+```json
+{
+  "name": "build",
+  "tasks": [
+    {"name": "checkout", "duration": 1, "fail_rate": 0, "depends_on": []},
+    {"name": "test", "duration": 3, "fail_rate": 0.2, "depends_on": ["checkout"]}
+  ]
+}
+```
+
+---
+
+Made by Rohan · [rohankumarrawat.com](https://rohankumarrawat.com)
