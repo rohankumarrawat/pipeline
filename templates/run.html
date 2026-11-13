@@ -4,27 +4,52 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Run #{{ run_id }}</title>
-  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
 </head>
-<body data-run-id="{{ run_id }}">
-  <header><h1><a href="/">Pipeline Runner</a></h1></header>
+<body class="bg-body-tertiary" data-run-id="{{ run_id }}">
+  <nav class="navbar bg-primary bg-gradient navbar-dark shadow-sm mb-4">
+    <div class="container">
+      <a class="navbar-brand fw-semibold" href="/">⚡ Pipeline Runner</a>
+      <span class="navbar-text small">Run details</span>
+    </div>
+  </nav>
 
-  <main>
-    <section class="card">
-      <h2 id="run-title">Run #{{ run_id }}</h2>
-      <p id="run-info" class="muted">Loading…</p>
-      <p id="run-error" class="error"></p>
-    </section>
+  <main class="container pb-5">
+    <a href="/" class="link-secondary small text-decoration-none d-inline-block mb-3">← All pipelines</a>
 
-    <section class="card">
-      <h2>Tasks</h2>
-      <table>
-        <thead>
-          <tr><th>Task</th><th>Status</th><th>Depends on</th><th>Started</th><th>Finished</th><th>Duration</th><th>Error</th></tr>
-        </thead>
-        <tbody id="task-rows"></tbody>
-      </table>
-    </section>
+    <!-- Run summary -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <h4 class="mb-0" id="run-title">Run #{{ run_id }}</h4>
+          <span id="run-status"></span>
+        </div>
+        <p class="text-body-secondary small mt-2 mb-3" id="run-info">Loading…</p>
+
+        <div class="progress-stacked mb-2" style="height:12px" id="progress"></div>
+        <div class="d-flex flex-wrap gap-3 small" id="legend"></div>
+        <div id="run-error"></div>
+      </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0">Tasks</h5>
+        <small class="text-body-secondary" id="live-note">Updating live…</small>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Task</th><th>Status</th><th>Depends on</th><th>Started</th><th>Duration</th>
+              <th style="min-width:180px">Timeline</th><th>Error</th>
+            </tr>
+          </thead>
+          <tbody id="task-rows"></tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
   <script src="{% static 'common.js' %}"></script>

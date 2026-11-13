@@ -1,5 +1,15 @@
 // Small helpers shared by both pages.
 
+// Bootstrap colour for each status.
+const STATUS_COLOR = {
+  queued: "secondary",
+  pending: "secondary",
+  running: "primary",
+  success: "success",
+  failed: "danger",
+  skipped: "warning",
+};
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -8,8 +18,12 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-function badge(status) {
-  return `<span class="badge ${status}">${status}</span>`;
+function badge(status, size = "") {
+  const color = STATUS_COLOR[status] || "secondary";
+  const spinner = status === "running"
+    ? `<span class="spinner-grow spinner-grow-sm me-1" style="width:.6rem;height:.6rem"></span>`
+    : "";
+  return `<span class="badge rounded-pill text-bg-${color} text-capitalize ${size}">${spinner}${status}</span>`;
 }
 
 function formatTime(iso) {

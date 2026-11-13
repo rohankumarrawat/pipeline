@@ -2,7 +2,7 @@
 
 A small workflow automation system. You define a **pipeline** as a set of tasks with dependencies (a directed acyclic graph), queue it for execution, and watch each task run live in the browser.
 
-**Stack:** Django + SQLite on the backend. The frontend is plain HTML, CSS and JavaScript, with no build step.
+**Stack:** Django + SQLite on the backend. The frontend is plain HTML and JavaScript styled entirely with Bootstrap 5 (bundled locally in `static/vendor/`, so it works offline), with no build step.
 
 ## How to run
 
@@ -25,10 +25,11 @@ python manage.py test
 
 ## How to use it
 
-1. Under **New pipeline**, click **Load example** (or add tasks yourself), then click **Create pipeline**.
+1. Under **New pipeline**, click **Load example** or **Load failure example** (or add tasks yourself), then click **Create pipeline**.
+   - The failure example has a `validate` task that always fails: `transform` and `send-report` get skipped, while the separate `backup` branch still succeeds.
    - Each task has a name, a duration in seconds, a fail chance in percent, and the tasks it depends on (comma-separated names).
 2. Click **Run** next to a pipeline. You'll be taken to the run page.
-3. The run page updates by itself. For every task it shows the status, the start and finish times, the duration, and the error if the task failed.
+3. The run page updates by itself. It shows an overall progress bar, and for every task the status, start time, duration, a timeline bar, and the error if the task failed.
 
 ## How it works
 
@@ -84,7 +85,7 @@ pipelines/
   views.py         Pages + JSON API
   tests.py         Tests
 templates/         index.html, run.html
-static/            style.css, common.js, index.js, run.js
+static/            common.js, index.js, run.js, vendor/bootstrap.min.css
 run.sh             One-command start
 ```
 
