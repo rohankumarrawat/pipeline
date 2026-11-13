@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Run #{{ run_id }}</title>
-  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}?v={{ v }}">
 </head>
 <body class="bg-body-tertiary" data-run-id="{{ run_id }}">
   <nav class="navbar bg-primary bg-gradient navbar-dark shadow-sm mb-4">
@@ -52,7 +52,7 @@
     </div>
   </main>
 
-  <script src="{% static 'common.js' %}"></script>
-  <script src="{% static 'run.js' %}"></script>
+  <script src="{% static 'common.js' %}?v={{ v }}"></script>
+  <script src="{% static 'run.js' %}?v={{ v }}"></script>
 </body>
 </html>

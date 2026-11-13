@@ -13,6 +13,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "pipelines.middleware.NoCacheStaticMiddleware",
     "django.middleware.common.CommonMiddleware",
 ]
 
@@ -23,7 +24,7 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": False,
-        "OPTIONS": {"context_processors": []},
+        "OPTIONS": {"context_processors": ["pipelines.context.static_version"]},
     }
 ]
 
@@ -43,6 +44,8 @@ TIME_ZONE = "UTC"
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# Bump this when JS changes so browsers load the new files.
+STATIC_VERSION = "3"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
