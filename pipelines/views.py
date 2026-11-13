@@ -79,6 +79,17 @@ def pipelines_api(request):
 
 
 @csrf_exempt
+@require_http_methods(["DELETE"])
+def pipeline_detail_api(request, pipeline_id):
+    pipeline = get_object_or_404(Pipeline, id=pipeline_id)
+    # Don't delete rows a background worker is still writing to.
+    if pipeline.runs.filter(status__in=[Run.QUEUED, Run.RUNNING]).exists():
+        return JsonResponse({"error": "This pipeline has a run in progress. Wait for it to finish, then delete."}, status=409)
+    pipeline.delete()  # also deletes its tasks and runs (cascade)
+    return JsonResponse({"deleted": pipeline_id})
+
+
+@csrf_exempt
 @require_POST
 def trigger_run_api(request, pipeline_id):
     pipeline = get_object_or_404(Pipeline, id=pipeline_id)

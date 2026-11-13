@@ -127,3 +127,19 @@ class RunnerTests(TestCase):
         recover_interrupted_runs()
         self.assertEqual(Run.objects.get(id=run_id).status, Run.FAILED)
         self.assertEqual(statuses(run_id), {"a": "failed"})
+
+
+class DeleteTests(TestCase):
+    def test_delete_pipeline_removes_runs(self):
+        pid = make_pipeline(self.client, [{"name": "a"}])
+        run_id = make_run(self.client, pid)
+        Run.objects.filter(id=run_id).update(status=Run.SUCCESS)
+        res = self.client.delete(f"/api/pipelines/{pid}/")
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(Run.objects.filter(id=run_id).exists())
+
+    def test_cannot_delete_while_running(self):
+        pid = make_pipeline(self.client, [{"name": "a"}])
+        make_run(self.client, pid)  # stays "queued"
+        res = self.client.delete(f"/api/pipelines/{pid}/")
+        self.assertEqual(res.status_code, 409)

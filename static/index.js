@@ -30,7 +30,10 @@ async function loadPipelines() {
           <td><span class="badge text-bg-light border">${p.task_count}</span></td>
           <td>${latestRun}</td>
           <td><div class="d-flex gap-1">${dots || '<span class="text-body-secondary">—</span>'}</div></td>
-          <td class="text-end pe-3"><button class="btn btn-sm btn-primary" onclick="runPipeline(${p.id}, this)">▶ Run</button></td>
+          <td class="text-end pe-3 text-nowrap">
+            <button class="btn btn-sm btn-primary" onclick="runPipeline(${p.id}, this)">▶ Run</button>
+            <button class="btn btn-sm btn-outline-danger ms-1" onclick="deletePipeline(${p.id}, this)">Delete</button>
+          </td>
         </tr>`;
     }).join("");
   } catch (err) {
@@ -49,6 +52,18 @@ async function runPipeline(id, button) {
   }
 }
 
+async function deletePipeline(id, button) {
+  if (!confirm("Delete this pipeline and all its runs?")) return;
+  button.disabled = true;
+  try {
+    await api(`/api/pipelines/${id}/`, { method: "DELETE" });
+    loadPipelines();
+  } catch (err) {
+    alert(err.message);
+    button.disabled = false;
+  }
+}
+
 // ----- Create pipeline form -----
 
 function addTaskRow(task = {}) {
@@ -61,29 +76,6 @@ function addTaskRow(task = {}) {
     <td><button type="button" class="btn btn-outline-secondary btn-sm" title="Remove">✕</button></td>`;
   tr.querySelector("button").onclick = () => tr.remove();
   document.getElementById("task-rows").appendChild(tr);
-}
-
-function loadExample() {
-  document.getElementById("pipeline-name").value = "Example: build & deploy";
-  document.getElementById("task-rows").innerHTML = "";
-  addTaskRow({ name: "checkout", duration: 1 });
-  addTaskRow({ name: "lint", duration: 2, deps: "checkout" });
-  addTaskRow({ name: "unit-tests", duration: 3, fail: 20, deps: "checkout" });
-  addTaskRow({ name: "build", duration: 2, deps: "checkout" });
-  addTaskRow({ name: "deploy", duration: 2, deps: "lint, unit-tests, build" });
-}
-
-// "validate" always fails (100%). Everything after it gets skipped,
-// while the independent "backup" branch still finishes.
-function loadFailExample() {
-  document.getElementById("pipeline-name").value = "Failure demo: data report";
-  document.getElementById("task-rows").innerHTML = "";
-  addTaskRow({ name: "fetch-data", duration: 2 });
-  addTaskRow({ name: "validate", duration: 2, fail: 100, deps: "fetch-data" });
-  addTaskRow({ name: "transform", duration: 2, deps: "validate" });
-  addTaskRow({ name: "send-report", duration: 1, deps: "transform" });
-  addTaskRow({ name: "backup", duration: 3, deps: "fetch-data" });
-  addTaskRow({ name: "notify-backup-done", duration: 1, deps: "backup" });
 }
 
 async function submitPipeline(event) {
@@ -114,8 +106,6 @@ async function submitPipeline(event) {
 }
 
 document.getElementById("add-task").onclick = () => addTaskRow();
-document.getElementById("load-example").onclick = loadExample;
-document.getElementById("load-fail-example").onclick = loadFailExample;
 document.getElementById("pipeline-form").onsubmit = submitPipeline;
 
 addTaskRow();

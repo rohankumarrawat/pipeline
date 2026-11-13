@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pipeline Runner</title>
+  <title>Pipeline</title>
   <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}?v={{ v }}">
 </head>
 <body class="bg-body-tertiary">
   <nav class="navbar bg-primary bg-gradient navbar-dark shadow-sm mb-4">
     <div class="container">
-      <a class="navbar-brand fw-semibold" href="/">⚡ Pipeline Runner</a>
+      <a class="navbar-brand fw-semibold" href="/">Pipeline</a>
       <span class="navbar-text small">Define tasks, set dependencies, watch them run live</span>
     </div>
   </nav>
@@ -87,8 +87,6 @@
 
           <div class="d-flex flex-wrap gap-2 mt-3">
             <button type="button" class="btn btn-outline-secondary" id="add-task">+ Add task</button>
-            <button type="button" class="btn btn-outline-primary" id="load-example">Load example</button>
-            <button type="button" class="btn btn-outline-danger" id="load-fail-example">Load failure example</button>
             <button type="submit" class="btn btn-primary ms-auto">Create pipeline</button>
           </div>
           <div id="form-message" class="mt-3"></div>

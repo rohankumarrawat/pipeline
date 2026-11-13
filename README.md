@@ -25,10 +25,10 @@ python manage.py test
 
 ## How to use it
 
-1. Under **New pipeline**, click **Load example** or **Load failure example** (or add tasks yourself), then click **Create pipeline**.
-   - The failure example has a `validate` task that always fails: `transform` and `send-report` get skipped, while the separate `backup` branch still succeeds.
+1. Under **New pipeline**, add your tasks, then click **Create pipeline**.
+   - To see failure handling, set one task's fail chance to 100%: every task after it is skipped, while separate branches still succeed.
    - Each task has a name, a duration in seconds, a fail chance in percent, and the tasks it depends on (comma-separated names).
-2. Click **Run** next to a pipeline. You'll be taken to the run page.
+2. Click **Run** next to a pipeline. You'll be taken to the run page. Use **Delete** to remove a pipeline and all its runs (blocked while a run is in progress).
 3. The run page updates by itself. It shows an overall progress bar, and for every task the status, start time, duration, a timeline bar, and the error if the task failed.
 
 ## How it works
@@ -70,7 +70,7 @@ The pipeline list polls every 2 seconds. The run page polls every second and sto
 | **SQLite** | Zero setup | Postgres for heavy concurrent writes |
 | **Simulated tasks** | Easy to demo ordering, parallelism and failures | Real task types (shell command, HTTP call) with timeouts, retries and log capture |
 | **No auth**; CSRF disabled on the JSON API | Out of scope for a local tool | Add user accounts so "my pipelines" means only your pipelines, and turn CSRF back on |
-| **No editing or deleting** of pipelines | Keeps the UI small | Versioned pipelines (editing would create a new version so old runs stay accurate) |
+| **No editing** of pipelines | Keeps the UI small | Versioned pipelines (editing would create a new version so old runs stay accurate) |
 | **No cancel or retry** buttons | Scope | Cancel a run, retry failed tasks only |
 | **Dependencies typed as comma-separated names** | Simple form | Pick dependencies from a dropdown and show a visual DAG |
 
@@ -96,4 +96,5 @@ run.sh             One-command start
 | GET | `/api/pipelines/` | List pipelines with latest/recent run status |
 | POST | `/api/pipelines/` | Create: `{"name": "...", "tasks": [{"name": "a", "duration": 1, "fail_rate": 0.1, "depends_on": []}]}` |
 | POST | `/api/pipelines/<id>/run/` | Queue a new run |
+| DELETE | `/api/pipelines/<id>/` | Delete a pipeline and its runs (409 if a run is in progress) |
 | GET | `/api/runs/<id>/` | Run details with every task's state |
