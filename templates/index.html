@@ -1,0 +1,50 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pipeline Runner</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+  <header><h1>Pipeline Runner</h1></header>
+
+  <main>
+    <section class="card">
+      <h2>Pipelines</h2>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Tasks</th><th>Latest run</th><th>Recent runs</th><th></th></tr>
+        </thead>
+        <tbody id="pipeline-rows">
+          <tr><td colspan="5" class="muted">Loading…</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>New pipeline</h2>
+      <form id="pipeline-form">
+        <label>Pipeline name <input id="pipeline-name" required placeholder="e.g. Nightly build"></label>
+
+        <table class="task-table">
+          <thead>
+            <tr><th>Task name</th><th>Duration (s)</th><th>Fail chance (%)</th><th>Depends on (comma separated)</th><th></th></tr>
+          </thead>
+          <tbody id="task-rows"></tbody>
+        </table>
+
+        <div class="buttons">
+          <button type="button" id="add-task">+ Add task</button>
+          <button type="button" id="load-example">Load example</button>
+          <button type="submit" class="primary">Create pipeline</button>
+        </div>
+        <p id="form-message"></p>
+      </form>
+    </section>
+  </main>
+
+  <script src="{% static 'common.js' %}"></script>
+  <script src="{% static 'index.js' %}"></script>
+</body>
+</html>

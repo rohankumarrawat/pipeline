@@ -1,0 +1,33 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Run #{{ run_id }}</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body data-run-id="{{ run_id }}">
+  <header><h1><a href="/">Pipeline Runner</a></h1></header>
+
+  <main>
+    <section class="card">
+      <h2 id="run-title">Run #{{ run_id }}</h2>
+      <p id="run-info" class="muted">Loading…</p>
+      <p id="run-error" class="error"></p>
+    </section>
+
+    <section class="card">
+      <h2>Tasks</h2>
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Status</th><th>Depends on</th><th>Started</th><th>Finished</th><th>Duration</th><th>Error</th></tr>
+        </thead>
+        <tbody id="task-rows"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="{% static 'common.js' %}"></script>
+  <script src="{% static 'run.js' %}"></script>
+</body>
+</html>
